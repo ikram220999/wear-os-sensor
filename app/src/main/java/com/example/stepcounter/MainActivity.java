@@ -158,6 +158,8 @@ public class MainActivity extends Activity implements SensorEventListener, View.
             double r = Math.sqrt((x*x) + (y*y) + (z*z));
 //            Log.d("FALL", String.format("%.2f", r));
 
+
+            // FALL DETECTION
             if(r < 1){
                 frame.setBackgroundColor(Color.RED);
 
@@ -197,6 +199,8 @@ public class MainActivity extends Activity implements SensorEventListener, View.
             }
             Log.d("difftime", String.valueOf(diffTime));
 
+
+            // IDLE TIME
             if(diffTime > SENSOR_DELAY_MICROS){
 
                 double a = 9.0;
@@ -232,6 +236,7 @@ public class MainActivity extends Activity implements SensorEventListener, View.
                 lx = x;
                 ly = y;
                 lz = z;
+
 
                 xData.clear();
                 yData.clear();

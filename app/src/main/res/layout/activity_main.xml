@@ -27,11 +27,13 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <ImageView
-                    android:id="@+id/imageView"
-                    android:layout_width="54dp"
-                    android:layout_height="25dp"
-                    android:src="@drawable/baseline_directions_walk_24" />
+                <TextView
+                    android:id="@+id/tvStep"
+                    android:layout_width="64dp"
+                    android:layout_height="match_parent"
+                    android:text="0"
+                    android:textAlignment="center"
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/textView2"
@@ -43,8 +45,8 @@
                     android:textSize="16sp" />
 
                 <TextView
-                    android:id="@+id/tvStep"
-                    android:layout_width="76dp"
+                    android:id="@+id/tvHeart"
+                    android:layout_width="64dp"
                     android:layout_height="match_parent"
                     android:text="0"
                     android:textAlignment="center"
@@ -74,7 +76,7 @@
                     android:textSize="16sp" />
 
                 <TextView
-                    android:id="@+id/tvHeart"
+                    android:id="@+id/tvStress"
                     android:layout_width="57dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"

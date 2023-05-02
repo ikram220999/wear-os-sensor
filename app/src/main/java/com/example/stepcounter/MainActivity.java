@@ -25,6 +25,7 @@ import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -34,6 +35,7 @@ import java.math.MathContext;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -42,11 +44,12 @@ public class MainActivity extends Activity implements SensorEventListener, View.
     private static final DecimalFormat df = new DecimalFormat("0.00");
 
     private static final int SENSOR_DELAY_MICROS = 60 * 1000;
-    private TextView tvStep, tvHeart, tvX, tvY, tvZ, tvSpeed;
+    private TextView tvStep, tvHeart, tvX, tvY, tvZ, tvSpeed, tvStress;
     private BoxInsetLayout frame;
     private Button btnReset;
 
     private long lastUpdate = 0;
+    private long lastUpdate2 = 0;
 
     private SensorManager sensorManager;
 
@@ -63,8 +66,13 @@ public class MainActivity extends Activity implements SensorEventListener, View.
     private ArrayList<Double> xData = new ArrayList<>();
     private ArrayList<Double> yData = new ArrayList<>();
     private ArrayList<Double> zData = new ArrayList<>();
-    double heartRate = 0.0;
+    long heartRate = 0;
     private ActivityMainBinding binding;
+
+    private List<Long> rrIntervals = new ArrayList<>();
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +100,7 @@ public class MainActivity extends Activity implements SensorEventListener, View.
         tvZ = findViewById(R.id.tvZ);
         tvSpeed = findViewById(R.id.tvSpeed);
         btnReset = findViewById(R.id.btnReset);
+        tvStress = findViewById(R.id.tvStress);
 
         btnReset.setOnClickListener(this);
 
@@ -126,6 +135,7 @@ public class MainActivity extends Activity implements SensorEventListener, View.
         lastUpdate = System.currentTimeMillis();
     }
 
+
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if(sensorEvent.sensor == mStepCounter){
@@ -134,8 +144,25 @@ public class MainActivity extends Activity implements SensorEventListener, View.
         }
 
         if(sensorEvent.sensor == mHeartRate){
-            heartRate = (double) sensorEvent.values[0];
+
+            long curTime2 = System.currentTimeMillis();
+            long diffTime2 =  curTime2 - lastUpdate2;
+
+            heartRate = (long) sensorEvent.values[0];
+
+            rrIntervals.add(heartRate);
             tvHeart.setText(String.valueOf(heartRate));
+
+
+// add heart rate data to rrIntervals list
+// ...      L
+            Log.d("time", String.valueOf(diffTime2));
+            if(diffTime2 > SENSOR_DELAY_MICROS){
+                calculateStressLevel();
+                lastUpdate2 = curTime2;
+
+            }
+
         }
 
         if(sensorEvent.sensor == mAccelerometer){
@@ -164,7 +191,8 @@ public class MainActivity extends Activity implements SensorEventListener, View.
                 frame.setBackgroundColor(Color.RED);
 
                 RequestQueue queue = Volley.newRequestQueue(this);
-                String url = "http://192.168.0.103/kambing/post.php";
+//                String url = "http://192.168.0.103/kambing/post.php";
+                String url = "http://192.168.0.103/bolt-laravel/public/api/machines/1/triggers/abnormal";
 
                 StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                         new Response.Listener<String>() {
@@ -194,10 +222,27 @@ public class MainActivity extends Activity implements SensorEventListener, View.
                     }
                 };
 
+//                queue.setRetryPolicy(new RetryPolicy() {
+//                    @Override
+//                    public int getCurrentTimeout() {
+//                        return 50000;
+//                    }
+//
+//                    @Override
+//                    public int getCurrentRetryCount() {
+//                        return 50000;
+//                    }
+//
+//                    @Override
+//                    public void retry(VolleyError error) throws VolleyError {
+//
+//                    }
+//                });
+
                 queue.add(stringRequest);
 
             }
-            Log.d("difftime", String.valueOf(diffTime));
+//            Log.d("difftime", String.valueOf(diffTime));
 
 
             // IDLE TIME
@@ -243,6 +288,55 @@ public class MainActivity extends Activity implements SensorEventListener, View.
                 zData.clear();
             }
         }
+    }
+
+    private void calculateStressLevel() {
+
+        if(rrIntervals.size() >= 10) {
+            List<Long> successiveDifferences = new ArrayList<>();
+            for (int i = rrIntervals.size() - 10; i < rrIntervals.size(); i++) {
+                successiveDifferences.add(rrIntervals.get(i) - rrIntervals.get(i-1));
+            }
+
+            List<Long> squaredDifferences = new ArrayList<>();
+            for (Long difference : successiveDifferences) {
+                squaredDifferences.add(difference * difference);
+            }
+
+            double rmssd = Math.sqrt(getAverage(squaredDifferences));
+//            int rmssdInt = (int) Math.round(rmssd);
+
+            Log.d("STRESS LEVEL",String.valueOf(rmssd));
+
+//            rrIntervals.clear();
+//            successiveDifferences.clear();
+//            squaredDifferences.clear();
+
+            tvStress.setText(String.format("%.2f", rmssd));
+
+            if(rmssd > 1){
+                tvStress.setBackgroundColor(Color.GREEN);
+                tvStress.setTextColor(Color.BLACK);
+
+            } else if (rmssd <= 1 && rmssd >= 0.7){
+                tvStress.setBackgroundColor(Color.YELLOW);
+                tvStress.setTextColor(Color.BLACK);
+
+            } else {
+                tvStress.setBackgroundColor(Color.RED);
+                tvStress.setTextColor(Color.WHITE);
+
+            }
+
+        }
+    }
+
+    private double getAverage(List<Long> numbers) {
+        long sum = 0;
+        for (long number : numbers) {
+            sum += number;
+        }
+        return (double) sum / numbers.size();
     }
 
     public double calculateRMS(ArrayList<Double> values){

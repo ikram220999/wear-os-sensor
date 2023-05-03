@@ -153,14 +153,10 @@ public class MainActivity extends Activity implements SensorEventListener, View.
             rrIntervals.add(heartRate);
             tvHeart.setText(String.valueOf(heartRate));
 
-
-// add heart rate data to rrIntervals list
-// ...      L
             Log.d("time", String.valueOf(diffTime2));
             if(diffTime2 > SENSOR_DELAY_MICROS){
                 calculateStressLevel();
                 lastUpdate2 = curTime2;
-
             }
 
         }
@@ -293,8 +289,23 @@ public class MainActivity extends Activity implements SensorEventListener, View.
     private void calculateStressLevel() {
 
         if(rrIntervals.size() >= 10) {
+
+//            rrIntervals.clear();
+//
+//            rrIntervals.add((long)100);
+//            rrIntervals.add((long)101);
+//            rrIntervals.add((long)103);
+//            rrIntervals.add((long)100);
+//            rrIntervals.add((long)98);
+//            rrIntervals.add((long)98);
+//            rrIntervals.add((long)99);
+//            rrIntervals.add((long)97);
+//            rrIntervals.add((long)95);
+//            rrIntervals.add((long)100);
+//            rrIntervals.add((long)102);
+
             List<Long> successiveDifferences = new ArrayList<>();
-            for (int i = rrIntervals.size() - 10; i < rrIntervals.size(); i++) {
+            for (int i = 1; i < rrIntervals.size(); i++) {
                 successiveDifferences.add(rrIntervals.get(i) - rrIntervals.get(i-1));
             }
 
@@ -308,7 +319,7 @@ public class MainActivity extends Activity implements SensorEventListener, View.
 
             Log.d("STRESS LEVEL",String.valueOf(rmssd));
 
-//            rrIntervals.clear();
+            rrIntervals.clear();
 //            successiveDifferences.clear();
 //            squaredDifferences.clear();
 
@@ -322,7 +333,11 @@ public class MainActivity extends Activity implements SensorEventListener, View.
                 tvStress.setBackgroundColor(Color.YELLOW);
                 tvStress.setTextColor(Color.BLACK);
 
-            } else {
+            } else if (rmssd == 0.0) {
+                tvStress.setBackgroundColor(Color.BLACK);
+                tvStress.setTextColor(Color.WHITE);
+
+            }else {
                 tvStress.setBackgroundColor(Color.RED);
                 tvStress.setTextColor(Color.WHITE);
 

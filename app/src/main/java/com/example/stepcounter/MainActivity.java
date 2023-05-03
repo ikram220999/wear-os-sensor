@@ -61,6 +61,8 @@ public class MainActivity extends Activity implements SensorEventListener, View.
 
     double x = 0, y = 0, z = 0;
 
+    double x2 = 0, y2 = 0, z2 = 0;
+
     private double lx = 0, ly = 0, lz = 0;
 
     private ArrayList<Double> xData = new ArrayList<>();
@@ -70,6 +72,13 @@ public class MainActivity extends Activity implements SensorEventListener, View.
     private ActivityMainBinding binding;
 
     private List<Long> rrIntervals = new ArrayList<>();
+
+    private static final int WINDOW_SIZE = 25; // window size in samples
+    private static final int THRESHOLD = 15;   // threshold for fall detection
+
+    private float[] gravity = new float[3];
+    private double[] magnitude = new double[WINDOW_SIZE];
+    private int magnitudeIndex = 0;
 
 
 
@@ -170,53 +179,75 @@ public class MainActivity extends Activity implements SensorEventListener, View.
             yData.add((double) sensorEvent.values[1]);
             zData.add((double) sensorEvent.values[2]);
 
-            x = (double) sensorEvent.values[0];
-            y = (double) sensorEvent.values[1];
-            z = (double) sensorEvent.values[2];
+            gravity[0] = 0.9f * gravity[0] + 0.1f * sensorEvent.values[0];
+            gravity[1] = 0.9f * gravity[1] + 0.1f * sensorEvent.values[1];
+            gravity[2] = 0.9f * gravity[2] + 0.1f * sensorEvent.values[2];
+            double x = sensorEvent.values[0] - gravity[0];
+            double y = sensorEvent.values[1] - gravity[1];
+            double z = sensorEvent.values[2] - gravity[2];
+
+            x2 = (double) sensorEvent.values[0];
+            y2 = (double) sensorEvent.values[1];
+            z2 = (double) sensorEvent.values[2];
+
+//            x = (double) sensorEvent.values[0];
+//            y = (double) sensorEvent.values[1];
+//            z = (double) sensorEvent.values[2];
 
             tvX.setText(String.format("%.2f", x));
             tvY.setText(String.format("%.2f", y));
             tvZ.setText(String.format("%.2f", z));
 
             double r = Math.sqrt((x*x) + (y*y) + (z*z));
+
+            double t = Math.sqrt((x2*x2) + (y2*y2) + (z2*z2));
 //            Log.d("FALL", String.format("%.2f", r));
+            magnitude[magnitudeIndex] = r;
+            magnitudeIndex = (magnitudeIndex + 1) % WINDOW_SIZE;
 
 
+            float sum = 0;
+            for (double m : magnitude) {
+                sum += m;
+            }
+            float avg = sum / WINDOW_SIZE;
+
+            Log.d("AVG", String.valueOf(avg));
             // FALL DETECTION
-            if(r < 1){
+            if(avg > THRESHOLD){
                 frame.setBackgroundColor(Color.RED);
 
-                RequestQueue queue = Volley.newRequestQueue(this);
-//                String url = "http://192.168.0.103/kambing/post.php";
-                String url = "http://192.168.0.103/bolt-laravel/public/api/machines/1/triggers/abnormal";
-
-                StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                        new Response.Listener<String>() {
-                            @Override
-                            public void onResponse(String response) {
-                                Log.d("KAMBING", "BERJAYA ...");
-                            }
-                        },  new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d("KAMBING", "TIDAK BERJAYA ..." + error);
-                    }
-                }){
-                    @Override
-                    protected Map<String,String> getParams(){
-                        Map<String,String> params = new HashMap<String, String>();
-                        params.put("fall","yes");
-
-                        return params;
-                    }
-
-                    @Override
-                    public Map<String, String> getHeaders() throws AuthFailureError {
-                        Map<String,String> params = new HashMap<String, String>();
-                        params.put("Content-Type","application/x-www-form-urlencoded");
-                        return params;
-                    }
-                };
+//                RequestQueue queue = Volley.newRequestQueue(this);
+////                String url = "http://192.168.0.103/kambing/post.php";
+//                String url = "http://192.168.0.103/bolt-laravel/public/api/machines/1/triggers/abnormal";
+//
+//                StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+//                        new Response.Listener<String>() {
+//                            @Override
+//                            public void onResponse(String response) {
+////                                Log.d("KAMBING", "BERJAYA ...");
+//                            }
+//                        },  new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+////                        Log.d("KAMBING", "TIDAK BERJAYA ..." + error);
+//                    }
+//                }){
+//                    @Override
+//                    protected Map<String,String> getParams(){
+//                        Map<String,String> params = new HashMap<String, String>();
+//                        params.put("fall","yes");
+//
+//                        return params;
+//                    }
+//
+//                    @Override
+//                    public Map<String, String> getHeaders() throws AuthFailureError {
+//                        Map<String,String> params = new HashMap<String, String>();
+//                        params.put("Content-Type","application/x-www-form-urlencoded");
+//                        return params;
+//                    }
+//                };
 
 //                queue.setRetryPolicy(new RetryPolicy() {
 //                    @Override
@@ -235,8 +266,12 @@ public class MainActivity extends Activity implements SensorEventListener, View.
 //                    }
 //                });
 
-                queue.add(stringRequest);
+//                queue.add(stringRequest);
 
+            }
+
+            if (t < 1) {
+                frame.setBackgroundColor(Color.RED);
             }
 //            Log.d("difftime", String.valueOf(diffTime));
 

@@ -190,10 +190,6 @@ public class MainActivity extends Activity implements SensorEventListener, View.
             y2 = (double) sensorEvent.values[1];
             z2 = (double) sensorEvent.values[2];
 
-//            x = (double) sensorEvent.values[0];
-//            y = (double) sensorEvent.values[1];
-//            z = (double) sensorEvent.values[2];
-
             tvX.setText(String.format("%.2f", x));
             tvY.setText(String.format("%.2f", y));
             tvZ.setText(String.format("%.2f", z));
